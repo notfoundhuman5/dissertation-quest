@@ -1070,7 +1070,7 @@ function getLvl(pts) { return LEVELS.find(l => pts >= l.min && pts <= l.max) || 
 function calcStreak() {
   if (!entries.length) return { streak:0, buffer:0 };
   const today = new Date(); today.setHours(0,0,0,0);
-  const active = new Set(entries.map(e => e.date));
+  const active = new Set(entries.map(e => normalizeDate(e.date)));
   let streak = 0, misses = 0, d = new Date(today);
   for (let i = 0; i < 400; i++) {
     const ds = d.toISOString().split('T')[0];
@@ -1090,7 +1090,7 @@ function calcStreak() {
 
 function recalcLives() {
   // Count completed weeks in streak history
-  const active = new Set(entries.map(e => e.date));
+  const active = new Set(entries.map(e => normalizeDate(e.date)));
   if (!active.size) { lives = 5; return; }
 
   // Simple approach: for each group of 7 consecutive active days → +1 life
@@ -1417,7 +1417,30 @@ function uid() {
 
 function fmtDate(ds) {
   if (!ds) return '—';
-  return new Date(ds + 'T12:00:00').toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'2-digit' });
+  // Normalize: supports YYYY-MM-DD, DD.MM.YYYY, MM/DD/YYYY, ISO strings
+  let d;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(ds)) {
+    d = new Date(ds + 'T12:00:00');
+  } else if (/^\d{2}\.\d{2}\.\d{4}$/.test(ds)) {
+    const [day, mon, yr] = ds.split('.');
+    d = new Date(`${yr}-${mon}-${day}T12:00:00`);
+  } else {
+    d = new Date(ds);
+  }
+  if (isNaN(d)) return ds;
+  return d.toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'2-digit' });
+}
+
+function normalizeDate(ds) {
+  if (!ds) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(ds)) return ds;
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(ds)) {
+    const [day, mon, yr] = ds.split('.');
+    return `${yr}-${mon}-${day}`;
+  }
+  const d = new Date(ds);
+  if (!isNaN(d)) return d.toISOString().split('T')[0];
+  return ds;
 }
 
 function showTab(id) {
