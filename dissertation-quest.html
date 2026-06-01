@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Dissertation Quest</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Super Mario World Overworld palette */
+      --sky:       #6EC6F5;      /* hellblauer Himmel/Wasser */
+      --sky2:      #4AAEE0;      /* dunkleres Wasser */
+      --island:    #E8D090;      /* beige Insel */
+      --island2:   #D4B86A;      /* dunkleres Beige */
+      --grass:     #5CB82A;      /* Grasgrün */
+      --grass2:    #3D8A18;      /* dunkles Gras */
+      --path:      #F5E8B0;      /* heller Weg */
+      --brown:     #7A4A18;      /* Erde/Rahmen */
+      --brown2:    #5A3210;      /* dunkles Braun */
+      --red:       #D42020;      /* Mario-Rot */
+      --yellow:    #FFD700;      /* Münzgelb */
+      --yellow2:   #E0A000;      /* dunkles Gold */
+      --white:     #FFFEF5;      /* fast weiß */
+      --text:      #2A1A00;      /* sehr dunkles Braun für Text */
+      --muted:     #7A6040;      /* gedämpft */
+      --shadow:    rgba(42,26,0,0.18);
+      --pixel:     'Press Start 2P', monospace;
+      --body:      -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+
+    body {
+      font-family: var(--body);
+      background: var(--sky);
+      /* Sky-to-water gradient als Hintergrund */
+      background: linear-gradient(180deg, #87D8F8 0%, #6EC6F5 40%, #4AAEE0 100%);
+      background-attachment: fixed;
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: calc(70px + env(safe-area-inset-bottom));
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--red);
+      border-bottom: 4px solid var(--brown2);
+      padding: 0.75rem 1rem;
+      padding-top: calc(0.75rem + env(safe-area-inset-top));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 3px 0 var(--brown2), 0 5px 12px var(--shadow);
+    }
+
+    .header-title {
+      font-family: var(--pixel);
+      font-size: 0.65rem;
+      color: var(--white);
+      text-shadow: 2px 2px 0 var(--brown2);
+      letter-spacing: 0.05em;
+      line-height: 1.6;
+    }
+
+    .header-title span { color: var(--yellow); }
+
+    /* ── LIVES ── */
+    .lives-row {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .life-icon {
+      font-size: 1rem;
+      filter: drop-shadow(1px 1px 0 rgba(0,0,0,0.3));
+    }
+
+    .life-icon.lost {
+      opacity: 0.2;
+      filter: grayscale(1);
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      background: var(--island);
+      border-bottom: 3px solid var(--brown);
+      padding: 0.5rem 0.75rem;
+      display: flex;
+      justify-content: space-around;
+      gap: 0;
+      box-shadow: 0 2px 0 var(--island2);
+    }
+
+    .stat {
+      text-align: center;
+      flex: 1;
+      border-right: 1px solid var(--island2);
+      padding: 0.2rem 0.3rem;
+    }
+
+    .stat:last-child { border-right: none; }
+
+    .stat-val {
+      font-family: var(--pixel);
+      font-size: 0.62rem;
+      color: var(--brown2);
+      line-height: 1.8;
+    }
+
+    .stat-lbl {
+      font-size: 0.56rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── BOTTOM TAB BAR ── */
+    .tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0; right: 0;
+      background: var(--island);
+      border-top: 3px solid var(--brown);
+      display: flex;
+      padding-bottom: env(safe-area-inset-bottom);
+      z-index: 100;
+      box-shadow: 0 -2px 0 var(--island2), 0 -4px 10px var(--shadow);
+    }
+
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 0.6rem 0.25rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: background 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .tab-btn:active { background: rgba(90,50,16,0.08); }
+
+    .tab-btn .tab-icon {
+      font-size: 1.3rem;
+      filter: grayscale(0.5) brightness(0.85);
+      transition: all 0.15s;
+    }
+
+    .tab-btn .tab-label {
+      font-family: var(--pixel);
+      font-size: 0.38rem;
+      color: var(--muted);
+      transition: color 0.15s;
+      letter-spacing: 0.03em;
+    }
+
+    .tab-btn.active .tab-icon {
+      filter: none;
+      transform: translateY(-2px);
+    }
+
+    .tab-btn.active .tab-label { color: var(--brown2); }
+
+    /* ── MAIN ── */
+    main {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── ISLAND CARD (allgemeine Karte) ── */
+    .px-card {
+      background: var(--island);
+      border: 3px solid var(--brown);
+      border-radius: 8px;
+      box-shadow: 0 4px 0 var(--brown2), 0 6px 16px var(--shadow);
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+
+    .px-card-header {
+      background: var(--grass);
+      border-bottom: 3px solid var(--grass2);
+      padding: 0.6rem 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .px-card-title {
+      font-family: var(--pixel);
+      font-size: 0.55rem;
+      color: var(--white);
+      text-shadow: 1px 1px 0 var(--grass2);
+      letter-spacing: 0.05em;
+    }
+
+    .px-card-body { padding: 1rem; }
+
+    /* ── STREAK HERO ── */
+    .streak-hero {
+      background: linear-gradient(135deg, var(--grass) 0%, var(--grass2) 100%);
+      border: 3px solid var(--grass2);
+      border-radius: 10px;
+      box-shadow: 0 4px 0 var(--brown2), 0 6px 16px var(--shadow);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .streak-fire { font-size: 2.5rem; line-height: 1; }
+
+    .streak-count {
+      font-family: var(--pixel);
+      font-size: 1.8rem;
+      color: var(--yellow);
+      text-shadow: 2px 2px 0 var(--brown2);
+      line-height: 1;
+    }
+
+    .streak-label {
+      font-family: var(--pixel);
+      font-size: 0.4rem;
+      color: rgba(255,255,255,0.8);
+      margin-top: 0.3rem;
+      letter-spacing: 0.08em;
+    }
+
+    .streak-info { flex: 1; }
+
+    .streak-msg {
+      font-size: 0.8rem;
+      color: var(--white);
+      margin-bottom: 0.25rem;
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+    }
+
+    .streak-sub { font-size: 0.7rem; color: rgba(255,255,255,0.7); }
+    .streak-sub.warning { color: var(--yellow); font-weight: bold; }
+
+    /* ── LEVEL PILL ── */
+    .level-pill {
+      background: var(--island);
+      border: 2px solid var(--brown);
+      border-radius: 6px;
+      padding: 0.5rem 0.7rem;
+      text-align: center;
+      white-space: nowrap;
+      box-shadow: 0 2px 0 var(--brown2);
+    }
+
+    .level-rank {
+      font-family: var(--pixel);
+      font-size: 0.42rem;
+      color: var(--brown2);
+      line-height: 1.8;
+    }
+
+    .level-bar-bg {
+      background: var(--island2);
+      border: 1px solid var(--brown);
+      border-radius: 999px;
+      height: 6px;
+      margin-top: 0.3rem;
+      overflow: hidden;
+    }
+
+    .level-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--red), #FF6040);
+      border-radius: 999px;
+      transition: width 0.5s ease;
+    }
+
+    .level-next {
+      font-size: 0.58rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    /* ── WORLD MAP (Inseln) ── */
+    .world-node {
+      background: var(--island);
+      border: 3px solid var(--brown);
+      border-radius: 10px;
+      box-shadow: 0 4px 0 var(--brown2), 0 6px 16px var(--shadow);
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+
+    .world-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.7rem 0.9rem;
+      border-bottom: 3px solid var(--brown);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Jede Insel hat ihr eigenes Gras-Farbschema */
+    .world-1 .world-header { background: linear-gradient(135deg, #5CB82A, #3D8A18); }
+    .world-2 .world-header { background: linear-gradient(135deg, #3A9AD0, #1A6AA0); }
+    .world-3 .world-header { background: linear-gradient(135deg, #D06030, #A03010); }
+    .world-4 .world-header { background: linear-gradient(135deg, #9040C0, #6020A0); }
+    .world-5 .world-header { background: linear-gradient(135deg, #D0A020, #A07010); }
+
+    .world-emoji { font-size: 1.5rem; }
+    .world-meta  { flex: 1; }
+
+    .world-name {
+      font-family: var(--pixel);
+      font-size: 0.5rem;
+      color: var(--white);
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+      margin-bottom: 0.2rem;
+    }
+
+    .world-sub  { font-size: 0.65rem; color: rgba(255,255,255,0.8); }
+
+    .world-pct {
+      font-family: var(--pixel);
+      font-size: 0.58rem;
+      color: var(--yellow);
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+    }
+
+    .world-progress {
+      padding: 0.5rem 0.9rem;
+      background: var(--path);
+      border-bottom: 1px solid var(--island2);
+    }
+
+    .prog-bar {
+      background: var(--island2);
+      border: 1px solid var(--brown);
+      border-radius: 999px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .prog-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--grass), #90E040);
+      border-radius: 999px;
+      transition: width 0.6s ease;
+    }
+
+    /* Missions als Insel-Level-Knoten */
+    .world-missions {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: var(--path);
+    }
+
+    .mission-tile {
+      background: var(--white);
+      border: 2px solid var(--brown);
+      border-radius: 8px;
+      padding: 0.6rem 0.7rem;
+      cursor: pointer;
+      transition: all 0.12s;
+      box-shadow: 0 3px 0 var(--island2);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mission-tile:hover  { transform: translateY(-2px); box-shadow: 0 5px 0 var(--island2); }
+    .mission-tile:active { transform: translateY(2px);  box-shadow: 0 1px 0 var(--island2); }
+
+    .mission-tile.done {
+      background: #E8F8D8;
+      border-color: var(--grass2);
+    }
+
+    .mission-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.25rem;
+    }
+
+    .mission-id {
+      font-family: var(--pixel);
+      font-size: 0.4rem;
+      color: var(--muted);
+    }
+
+    .mission-pts {
+      font-family: var(--pixel);
+      font-size: 0.4rem;
+      color: var(--grass2);
+    }
+
+    .mission-title {
+      font-size: 0.72rem;
+      color: var(--text);
+      line-height: 1.35;
+    }
+
+    /* ── FORMS ── */
+    .form-group { margin-bottom: 0.85rem; }
+
+    .form-label {
+      display: block;
+      font-family: var(--pixel);
+      font-size: 0.42rem;
+      color: var(--brown);
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.06em;
+    }
+
+    input[type="date"],
+    input[type="text"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      background: var(--white);
+      border: 2px solid var(--brown);
+      border-radius: 6px;
+      font-family: var(--body);
+      font-size: 0.88rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -webkit-appearance: none;
+      box-shadow: 0 2px 0 var(--island2);
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--grass);
+      box-shadow: 0 0 0 3px rgba(92,184,42,0.2), 0 2px 0 var(--island2);
+    }
+
+    textarea { resize: vertical; min-height: 80px; }
+    select option { background: var(--white); }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+    }
+
+    /* ── HERO SELECTOR ── */
+    .hero-options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+
+    .hero-opt {
+      background: var(--white);
+      border: 2px solid var(--brown);
+      border-radius: 8px;
+      padding: 0.65rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.12s;
+      box-shadow: 0 3px 0 var(--island2);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .hero-opt:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--island2); }
+
+    .hero-opt.selected {
+      border-color: var(--grass);
+      background: #E8F8D8;
+      box-shadow: 0 3px 0 var(--grass2);
+    }
+
+    .hero-emoji { font-size: 1.5rem; }
+    .hero-info  { flex: 1; }
+
+    .hero-name {
+      font-family: var(--pixel);
+      font-size: 0.42rem;
+      color: var(--brown2);
+      margin-bottom: 0.2rem;
+    }
+
+    .hero-action { font-size: 0.68rem; color: var(--muted); }
+
+    .hero-pts {
+      font-family: var(--pixel);
+      font-size: 0.52rem;
+      color: var(--grass2);
+    }
+
+    /* ── PIXEL BUTTON ── */
+    .px-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.6rem 1.2rem;
+      font-family: var(--pixel);
+      font-size: 0.5rem;
+      border: 2px solid;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.12s;
+      letter-spacing: 0.05em;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .px-btn:active { transform: translateY(2px); }
+    .px-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .px-btn-primary {
+      background: var(--red);
+      color: var(--white);
+      border-color: #A01010;
+      box-shadow: 0 4px 0 #801010;
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+    }
+
+    .px-btn-primary:hover  { background: #E83030; }
+    .px-btn-primary:active { box-shadow: 0 1px 0 #801010; }
+
+    .px-btn-ghost {
+      background: var(--island);
+      color: var(--brown2);
+      border-color: var(--brown);
+      box-shadow: 0 3px 0 var(--brown2);
+    }
+
+    .px-btn-ghost:hover  { background: var(--island2); }
+    .px-btn-ghost:active { box-shadow: 0 1px 0 var(--brown2); }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      white-space: nowrap;
+      border: 1px solid;
+    }
+
+    .badge-write  { background: #FFF3CC; color: #7A4A00; border-color: #E0C050; }
+    .badge-revise { background: #E8F8D8; color: #2A6010; border-color: #80C840; }
+    .badge-read   { background: #D8EEFF; color: #0A3A7A; border-color: #60A0E0; }
+    .badge-plan   { background: #F0E8FF; color: #5A1A8A; border-color: #B080E0; }
+
+    /* ── LOG TABLE ── */
+    .log-wrap { overflow-x: auto; }
+
+    .log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      min-width: 420px;
+    }
+
+    .log-table th {
+      font-family: var(--pixel);
+      font-size: 0.38rem;
+      color: var(--white);
+      text-align: left;
+      padding: 0.5rem 0.65rem;
+      background: var(--grass2);
+      border-bottom: 2px solid var(--grass2);
+      white-space: nowrap;
+      letter-spacing: 0.05em;
+    }
+
+    .log-table td {
+      padding: 0.5rem 0.65rem;
+      border-bottom: 1px solid var(--island2);
+      vertical-align: top;
+    }
+
+    .log-table tr:last-child td { border-bottom: none; }
+    .log-table tbody tr:hover td { background: var(--path); }
+
+    .log-empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 2.5rem;
+      font-size: 0.8rem;
+      font-style: italic;
+    }
+
+    /* ── LOG FILTERS ── */
+    .log-filters {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.85rem;
+    }
+
+    .log-filters select { flex: 1; min-width: 130px; }
+
+    /* ── BULK ROWS ── */
+    .bulk-row {
+      background: var(--white);
+      border: 2px solid var(--brown);
+      border-radius: 8px;
+      padding: 0.85rem;
+      margin-bottom: 0.6rem;
+      position: relative;
+      box-shadow: 0 3px 0 var(--island2);
+    }
+
+    .bulk-row-num {
+      font-family: var(--pixel);
+      font-size: 0.38rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .bulk-remove {
+      position: absolute;
+      top: 0.5rem; right: 0.6rem;
+      background: none;
+      border: 1px solid var(--island2);
+      border-radius: 4px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.75rem;
+      padding: 0.1rem 0.4rem;
+      transition: all 0.1s;
+    }
+
+    .bulk-remove:hover { border-color: var(--red); color: var(--red); }
+
+    /* ── ALERTS ── */
+    .alert {
+      padding: 0.65rem 0.85rem;
+      border-radius: 6px;
+      margin-bottom: 0.85rem;
+      font-size: 0.82rem;
+      border: 2px solid;
+    }
+
+    .alert-success { background: #E8F8D8; border-color: var(--grass); color: #2A6010; }
+    .alert-error   { background: #FFE8E8; border-color: var(--red);   color: #8A1010; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: calc(80px + env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: var(--brown2);
+      color: var(--yellow);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-family: var(--pixel);
+      font-size: 0.42rem;
+      letter-spacing: 0.05em;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 200;
+      white-space: nowrap;
+      box-shadow: 0 3px 8px var(--shadow);
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── SPINNER ── */
+    .spinner {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── COIN ANIMATION ── */
+    @keyframes coinPop {
+      0%   { transform: scale(1) translateY(0); opacity: 1; }
+      50%  { transform: scale(1.4) translateY(-8px); opacity: 1; }
+      100% { transform: scale(0) translateY(-20px); opacity: 0; }
+    }
+
+    .coin-pop {
+      position: fixed;
+      font-size: 1.2rem;
+      pointer-events: none;
+      z-index: 500;
+      animation: coinPop 0.6s ease forwards;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 500px) {
+      main { padding: 0.75rem; }
+      .form-row { grid-template-columns: 1fr; }
+      .world-missions { grid-template-columns: 1fr 1fr; }
+      .streak-count { font-size: 1.3rem; }
+      .streak-hero { gap: 0.5rem; }
+      .hero-options { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 360px) {
+      .world-missions { grid-template-columns: 1fr; }
+      .stats-bar { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header>
+  <div class="header-title">
+    🎮 DISS<span>QUEST</span>
+  </div>
+  <div class="lives-row" id="livesRow">
+    <!-- filled by JS -->
+  </div>
+</header>
+
+<!-- ═══ STATS BAR ═══ -->
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-val" id="sCoins">🪙 0</div>
+    <div class="stat-lbl">Münzen</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val" id="sLevel">LV 1</div>
+    <div class="stat-lbl">Level</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val" id="sRank">Forscherin</div>
+    <div class="stat-lbl">Rang</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val" id="sStreak">0🔥</div>
+    <div class="stat-lbl">Streak</div>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<main>
+
+  <!-- ─── WELTKARTE ─── -->
+  <div class="tab-content active" id="tab-world">
+
+    <div class="streak-hero">
+      <div class="streak-fire">🔥</div>
+      <div>
+        <div class="streak-count" id="shCount">0</div>
+        <div class="streak-label">TAGE STREAK</div>
+      </div>
+      <div class="streak-info">
+        <div class="streak-msg" id="shMsg">Starte deinen ersten Tag!</div>
+        <div class="streak-sub" id="shSub"></div>
+      </div>
+      <div class="level-pill">
+        <div class="level-rank" id="lpRank">FORSCHERIN</div>
+        <div class="level-bar-bg">
+          <div class="level-bar-fill" id="lpBar" style="width:0%"></div>
+        </div>
+        <div class="level-next" id="lpNext">50 Pkt fehlen</div>
+      </div>
+    </div>
+
+    <div id="worldsContainer"></div>
+  </div>
+
+  <!-- ─── CHECK-IN ─── -->
+  <div class="tab-content" id="tab-checkin">
+
+    <div class="px-card">
+      <div class="px-card-header">
+        <span>✏️</span>
+        <span class="px-card-title">NEUER EINTRAG</span>
+      </div>
+      <div class="px-card-body">
+        <div id="ciAlert"></div>
+
+        <!-- Hero-Auswahl = Typ -->
+        <div class="form-group">
+          <div class="form-label">HELD & AKTIVITÄT WÄHLEN</div>
+          <div class="hero-options" id="heroOptions">
+            <div class="hero-opt selected" data-type="write" onclick="selectHero(this)">
+              <div class="hero-emoji">🦍</div>
+              <div class="hero-info">
+                <div class="hero-name">DONKEY KONG</div>
+                <div class="hero-action">Schreiben</div>
+              </div>
+              <div class="hero-pts">3★</div>
+            </div>
+            <div class="hero-opt" data-type="revise" onclick="selectHero(this)">
+              <div class="hero-emoji">🐢</div>
+              <div class="hero-info">
+                <div class="hero-name">KOOPA</div>
+                <div class="hero-action">Überarbeiten</div>
+              </div>
+              <div class="hero-pts">2★</div>
+            </div>
+            <div class="hero-opt" data-type="read" onclick="selectHero(this)">
+              <div class="hero-emoji">🦕</div>
+              <div class="hero-info">
+                <div class="hero-name">YOSHI</div>
+                <div class="hero-action">Lesen & Recherche</div>
+              </div>
+              <div class="hero-pts">1★</div>
+            </div>
+            <div class="hero-opt" data-type="plan" onclick="selectHero(this)">
+              <div class="hero-emoji">🍄</div>
+              <div class="hero-info">
+                <div class="hero-name">TOAD</div>
+                <div class="hero-action">Planung & Gespräch</div>
+              </div>
+              <div class="hero-pts">1★</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">DATUM</label>
+            <input type="date" id="ciDate" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">MISSION</label>
+            <select id="ciChapter">
+              <option value="">— Allgemein —</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">NOTIZ (OPTIONAL)</label>
+          <textarea id="ciNote" placeholder="Was hast du heute geschafft?"></textarea>
+        </div>
+
+        <button class="px-btn px-btn-primary" onclick="submitCheckin()" id="ciBtn">
+          ▶ SPEICHERN
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── BULK IMPORT ─── -->
+  <div class="tab-content" id="tab-bulk">
+    <div class="px-card">
+      <div class="px-card-header">
+        <span>📦</span>
+        <span class="px-card-title">BULK IMPORT</span>
+      </div>
+      <div class="px-card-body">
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem;">Mehrere Einträge auf einmal — ideal für Nachträge.</p>
+        <div id="bulkAlert"></div>
+        <div id="bulkList"></div>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:0.25rem;">
+          <button class="px-btn px-btn-ghost" onclick="addBulkRow()">+ HINZUFÜGEN</button>
+          <button class="px-btn px-btn-primary" onclick="submitBulk()" id="bulkBtn">▶ ALLE SPEICHERN</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── LOG ─── -->
+  <div class="tab-content" id="tab-log">
+    <div class="px-card">
+      <div class="px-card-header">
+        <span>📋</span>
+        <span class="px-card-title">EINTRAGSLOG</span>
+      </div>
+      <div class="px-card-body">
+        <div class="log-filters">
+          <select id="fType" onchange="renderLog()">
+            <option value="">Alle Typen</option>
+            <option value="write">🦍 Schreiben</option>
+            <option value="revise">🐢 Überarbeiten</option>
+            <option value="read">🦕 Lesen</option>
+            <option value="plan">🍄 Planung</option>
+          </select>
+          <select id="fChapter" onchange="renderLog()">
+            <option value="">Alle Missionen</option>
+          </select>
+        </div>
+        <div class="log-wrap">
+          <table class="log-table">
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Held</th>
+                <th>Mission</th>
+                <th>★</th>
+                <th>Notiz</th>
+              </tr>
+            </thead>
+            <tbody id="logBody">
+              <tr><td colspan="5" class="log-empty">Noch keine Einträge</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="logSummary" style="font-size:0.68rem;color:var(--muted);margin-top:0.75rem;text-align:right;font-family:var(--pixel);"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ═══ BOTTOM TAB BAR ═══ -->
+<nav class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('world')">
+    <span class="tab-icon">🗺️</span>
+    <span class="tab-label">WELTKARTE</span>
+  </button>
+  <button class="tab-btn" onclick="showTab('checkin')">
+    <span class="tab-icon">✏️</span>
+    <span class="tab-label">CHECK-IN</span>
+  </button>
+  <button class="tab-btn" onclick="showTab('bulk')">
+    <span class="tab-icon">📦</span>
+    <span class="tab-label">BULK</span>
+  </button>
+  <button class="tab-btn" onclick="showTab('log')">
+    <span class="tab-icon">📋</span>
+    <span class="tab-label">LOG</span>
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══ SCRIPT ═══ -->
+<script>
+'use strict';
+
+// ── CONFIG ──────────────────────────────────────────
+const API_URL  = 'https://script.google.com/macros/s/AKfycbwlN7NwbCeZeUg48O_x-pdyjqHeJUgxEQ4UjWhpkV9lFGfcGgf4d1ZIoymLcFFhn-eGVQ/exec';
+const TOKEN    = 'diss2026sabine';
+const LS_KEY   = 'diss_quest_v2';
+
+// ── WORLDS ──────────────────────────────────────────
+const WORLDS = [
+  { id:'w1', emoji:'🌅', title:'EINLEITUNG',  cls:'world-1', missions:[
+    { id:'1.1', title:'Kindheit mit Sonderstellung' },
+    { id:'1.2', title:'Populärwiss. Diskurs' },
+    { id:'1.3', title:'Werbung und PR' },
+    { id:'1.4', title:'Stiegler-Theorien' },
+    { id:'1.5', title:'Fazit Einleitung' }
+  ]},
+  { id:'w2', emoji:'🏙️', title:'KAPITEL 2', cls:'world-2', missions:[
+    { id:'2.1', title:'Kindheit in Gefahr!?' },
+    { id:'2.2', title:'Kindheit und Nostalgie' }
+  ]},
+  { id:'w3', emoji:'📺', title:'KAPITEL 3', cls:'world-3', missions:[
+    { id:'3.1',   title:'Familie als Erzieherin & Refugium' },
+    { id:'3.1.1', title:'Was wäre … ohne Kinder?' },
+    { id:'3.2',   title:'Weitere Unterkapitel' }
+  ]},
+  { id:'w4', emoji:'📡', title:'KAPITEL 4', cls:'world-4', missions:[
+    { id:'4.1', title:'Stiegler & Kindheit' },
+    { id:'4.2', title:'Medien & Sorge' },
+    { id:'4.3', title:'Abschluss Kap. 4' }
+  ]},
+  { id:'w5', emoji:'🏁', title:'SCHLUSS', cls:'world-5', missions:[
+    { id:'S.1', title:'Zusammenfassung' },
+    { id:'S.2', title:'Ausblick' }
+  ]}
+];
+
+const ALL_MISSIONS = WORLDS.flatMap(w => w.missions);
+
+// ── HEROES ──────────────────────────────────────────
+const HEROES = {
+  write:  { emoji:'🦍', name:'Donkey Kong',  pts: 3 },
+  revise: { emoji:'🐢', name:'Koopa',        pts: 2 },
+  read:   { emoji:'🦕', name:'Yoshi',        pts: 1 },
+  plan:   { emoji:'🍄', name:'Toad',         pts: 1 }
+};
+
+// ── LEVELS ──────────────────────────────────────────
+const LEVELS = [
+  { min:0,    max:49,   lv:1, rank:'Forscherin'   },
+  { min:50,   max:129,  lv:2, rank:'Analytica'    },
+  { min:130,  max:279,  lv:3, rank:'Theoretikerin'},
+  { min:280,  max:499,  lv:4, rank:'Schreiberin'  },
+  { min:500,  max:799,  lv:5, rank:'Doktorandin'  },
+  { min:800,  max:1199, lv:6, rank:'Gelehrte'     },
+  { min:1200, max:1799, lv:7, rank:'Magistra'     },
+  { min:1800, max:Infinity, lv:8, rank:'Doktorin ✦' }
+];
+
+// ── STATE ────────────────────────────────────────────
+let entries  = [];
+let lives    = 5;
+let bulkN    = 0;
+
+// ── INIT ────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  setToday('ciDate');
+  buildSelects();
+  addBulkRow();
+
+  const saved = localStorage.getItem(LS_KEY);
+  if (saved) {
+    try {
+      const d = JSON.parse(saved);
+      entries = d.entries || [];
+      lives   = d.lives   ?? 5;
+    } catch(e) {}
+    updateUI();
+  }
+
+  syncLoad();
+});
+
+// ── API ─────────────────────────────────────────────
+async function apiGet(params) {
+  const url = new URL(API_URL);
+  Object.entries({ token: TOKEN, ...params }).forEach(([k,v]) => url.searchParams.set(k,v));
+  const r = await fetch(url.toString(), { redirect:'follow' });
+  return r.json();
+}
+
+async function apiPost(body) {
+  const r = await fetch(API_URL, {
+    method: 'POST',
+    mode: 'cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ token: TOKEN, ...body }),
+    redirect: 'follow'
+  });
+  return r.json();
+}
+
+async function syncLoad() {
+  showToast('⟳ SYNC…');
+  try {
+    const d = await apiGet({ action:'getEntries' });
+    if (d && d.success && Array.isArray(d.entries)) {
+      entries = d.entries;
+      recalcLives();
+      persist();
+      updateUI();
+      showToast('✓ SYNCHRONISIERT');
+    } else {
+      showToast('OFFLINE-MODUS');
+    }
+  } catch(e) {
+    showToast('OFFLINE-MODUS');
+  }
+}
+
+// ── CALCULATIONS ────────────────────────────────────
+function totalPts()  { return entries.reduce((s,e) => s + (HEROES[e.type]?.pts || 0), 0); }
+
+function getLvl(pts) { return LEVELS.find(l => pts >= l.min && pts <= l.max) || LEVELS[LEVELS.length-1]; }
+
+function calcStreak() {
+  if (!entries.length) return { streak:0, buffer:0 };
+  const today = new Date(); today.setHours(0,0,0,0);
+  const active = new Set(entries.map(e => e.date));
+  let streak = 0, misses = 0, d = new Date(today);
+  for (let i = 0; i < 400; i++) {
+    const ds = d.toISOString().split('T')[0];
+    if (active.has(ds)) { streak++; misses = 0; }
+    else { misses++; if (misses > 2) break; }
+    d.setDate(d.getDate() - 1);
+  }
+  // buffer = consecutive miss days from today backwards
+  let buffer = 0;
+  const h = new Date(today);
+  for (let i = 0; i < 3; i++) {
+    if (!active.has(h.toISOString().split('T')[0])) { buffer++; h.setDate(h.getDate()-1); }
+    else break;
+  }
+  return { streak, buffer };
+}
+
+function recalcLives() {
+  // Count completed weeks in streak history
+  const active = new Set(entries.map(e => e.date));
+  if (!active.size) { lives = 5; return; }
+
+  // Simple approach: for each group of 7 consecutive active days → +1 life
+  // Start at 5, subtract streak breaks (hard to detect retroactively)
+  // We'll calculate lives = 5 + completedWeeks - streakBreaks
+  // For simplicity: lives = 5 + floor(streak/7) capped at 99
+  const { streak } = calcStreak();
+  lives = Math.min(99, 5 + Math.floor(streak / 7));
+}
+
+function mPts(id)    { return entries.filter(e => e.chapter === id).reduce((s,e) => s + (HEROES[e.type]?.pts || 0), 0); }
+function wPts(world) {
+  const ids = new Set(world.missions.map(m => m.id));
+  return entries.filter(e => ids.has(e.chapter)).reduce((s,e) => s + (HEROES[e.type]?.pts || 0), 0);
+}
+
+// ── UPDATE UI ────────────────────────────────────────
+function updateUI() {
+  const pts = totalPts();
+  const lvl = getLvl(pts);
+  const { streak, buffer } = calcStreak();
+
+  // Lives
+  const maxShow = Math.min(lives, 10);
+  document.getElementById('livesRow').innerHTML =
+    Array.from({length: maxShow}, (_,i) => `<span class="life-icon">❤️</span>`).join('') +
+    (lives > 10 ? `<span style="font-family:var(--pixel);font-size:0.4rem;color:var(--yellow);margin-left:4px">x${lives}</span>` : '');
+
+  // Stats
+  document.getElementById('sCoins').textContent  = '🪙 ' + pts;
+  document.getElementById('sLevel').textContent  = 'LV ' + lvl.lv;
+  document.getElementById('sRank').textContent   = lvl.rank.toUpperCase();
+  document.getElementById('sStreak').textContent = streak + '🔥';
+
+  // Streak hero
+  document.getElementById('shCount').textContent = streak;
+  document.getElementById('shMsg').textContent =
+    streak === 0 ? 'Starte deinen ersten Tag!' :
+    streak < 3   ? `${streak} Tag${streak>1?'e':''} — los geht's!` :
+    streak < 7   ? `${streak} Tage — du rollst!` :
+    streak < 14  ? `${streak} Tage — 🌟 Ausgezeichnet!` :
+    streak < 30  ? `${streak} Tage — 🏆 Phänomenal!` :
+                   `${streak} Tage — 👑 Legendär!`;
+
+  const subEl = document.getElementById('shSub');
+  if (buffer === 0) {
+    subEl.textContent = '';
+    subEl.className = 'streak-sub';
+  } else if (buffer === 1) {
+    subEl.textContent = '⚠ 1 Puffertag verbraucht — noch 1 möglich';
+    subEl.className = 'streak-sub warning';
+  } else if (buffer === 2) {
+    subEl.textContent = '🚨 2 Puffertage verbraucht — heute unbedingt arbeiten!';
+    subEl.className = 'streak-sub warning';
+  }
+
+  // Level pill
+  document.getElementById('lpRank').textContent = lvl.rank.toUpperCase();
+  const nextLvl = LEVELS.find(l => l.lv === lvl.lv + 1);
+  if (nextLvl) {
+    const prog = Math.min(100, ((pts - lvl.min) / (nextLvl.min - lvl.min)) * 100);
+    document.getElementById('lpBar').style.width  = prog + '%';
+    document.getElementById('lpNext').textContent = (nextLvl.min - pts) + ' Pkt';
+  } else {
+    document.getElementById('lpBar').style.width  = '100%';
+    document.getElementById('lpNext').textContent = '★ MAX ★';
+  }
+
+  renderWorlds();
+  renderLog();
+}
+
+// ── RENDER WORLDS ────────────────────────────────────
+function renderWorlds() {
+  const c = document.getElementById('worldsContainer');
+  c.innerHTML = '';
+  WORLDS.forEach(world => {
+    const wp   = wPts(world);
+    const cap  = world.missions.length * 75;
+    const pct  = Math.min(100, Math.round((wp / cap) * 100));
+
+    const tiles = world.missions.map(m => {
+      const mp  = mPts(m.id);
+      const done = mp > 0;
+      return `<div class="mission-tile${done?' done':''}" onclick="quickCheckin('${m.id}')">
+        <div class="mission-top">
+          <span class="mission-id">${m.id}</span>
+          ${done ? `<span class="mission-pts">${mp}★</span>` : ''}
+        </div>
+        <div class="mission-title">${m.title}</div>
+      </div>`;
+    }).join('');
+
+    c.innerHTML += `
+      <div class="world-node ${world.cls}">
+        <div class="world-header" onclick="this.parentElement.querySelector('.world-missions').classList.toggle('hidden')">
+          <div class="world-emoji">${world.emoji}</div>
+          <div class="world-meta">
+            <div class="world-name">${world.title}</div>
+            <div class="world-sub">${world.missions.length} Missionen · ${wp} Pkt</div>
+          </div>
+          <div class="world-pct">${pct}%</div>
+        </div>
+        <div class="world-progress">
+          <div class="prog-bar">
+            <div class="prog-fill" style="width:${Math.max(pct>0?2:0, pct)}%"></div>
+          </div>
+        </div>
+        <div class="world-missions">${tiles}</div>
+      </div>`;
+  });
+}
+
+// ── RENDER LOG ────────────────────────────────────────
+function renderLog() {
+  const tf = document.getElementById('fType')?.value    || '';
+  const cf = document.getElementById('fChapter')?.value || '';
+
+  let rows = entries.filter(e =>
+    (!tf || e.type === tf) && (!cf || e.chapter === cf)
+  );
+  rows = [...rows].sort((a,b) => b.date.localeCompare(a.date));
+
+  const tbody = document.getElementById('logBody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="log-empty">Keine Einträge gefunden</td></tr>';
+    document.getElementById('logSummary').textContent = '';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(e => {
+    const h = HEROES[e.type] || { emoji:'?', name:e.type, pts:0 };
+    const m = ALL_MISSIONS.find(m => m.id === e.chapter);
+    const badge = `badge-${e.type}`;
+    return `<tr>
+      <td style="white-space:nowrap">${fmtDate(e.date)}</td>
+      <td><span class="badge ${badge}">${h.emoji} ${h.name}</span></td>
+      <td style="white-space:nowrap;font-size:0.72rem">${m ? m.id : (e.chapter || '—')}</td>
+      <td style="font-family:var(--pixel);font-size:0.45rem;color:var(--yellow)">${h.pts}★</td>
+      <td style="color:var(--muted);font-size:0.72rem">${e.note || ''}</td>
+    </tr>`;
+  }).join('');
+
+  const sumPts = rows.reduce((s,e) => s + (HEROES[e.type]?.pts || 0), 0);
+  document.getElementById('logSummary').textContent = rows.length + ' EINTRÄGE · ' + sumPts + ' ★';
+}
+
+// ── BUILD SELECTS ────────────────────────────────────
+function buildSelects() {
+  ['ciChapter', 'fChapter'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    WORLDS.forEach(world => {
+      const grp = document.createElement('optgroup');
+      grp.label = world.emoji + ' ' + world.title;
+      world.missions.forEach(m => {
+        const o = document.createElement('option');
+        o.value = m.id;
+        o.textContent = m.id + ' – ' + m.title;
+        grp.appendChild(o);
+      });
+      sel.appendChild(grp);
+    });
+  });
+}
+
+// ── HERO SELECT ──────────────────────────────────────
+function selectHero(el) {
+  document.querySelectorAll('.hero-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function selectedType() {
+  return document.querySelector('.hero-opt.selected')?.dataset.type || 'write';
+}
+
+// ── CHECK-IN ─────────────────────────────────────────
+function setToday(id) {
+  document.getElementById(id).value = new Date().toISOString().split('T')[0];
+}
+
+function quickCheckin(missionId) {
+  showTab('checkin');
+  document.getElementById('ciChapter').value = missionId;
+  document.getElementById('ciNote').focus();
+}
+
+async function submitCheckin() {
+  const date    = document.getElementById('ciDate').value;
+  const type    = selectedType();
+  const chapter = document.getElementById('ciChapter').value;
+  const note    = document.getElementById('ciNote').value.trim();
+
+  if (!date) { showAlert('ciAlert','error','Bitte ein Datum wählen.'); return; }
+
+  const entry = { id: uid(), date, type, chapter, note };
+  const btn   = document.getElementById('ciBtn');
+  btn.innerHTML = '<span class="spinner"></span> SPEICHERE…';
+  btn.disabled  = true;
+
+  entries.push(entry);
+  recalcLives();
+  persist();
+  updateUI();
+
+  spawnCoin(btn);
+
+  let ok = false;
+  try { const r = await apiPost({ action:'addEntry', entry }); ok = r?.success; } catch(e){}
+
+  btn.innerHTML = '▶ SPEICHERN';
+  btn.disabled  = false;
+
+  const pts = HEROES[type]?.pts || 0;
+  showAlert('ciAlert','success', `+${pts}★ ${HEROES[type]?.emoji} ${HEROES[type]?.name}!` +
+    (ok ? '' : ' (offline)'));
+
+  document.getElementById('ciNote').value = '';
+  setToday('ciDate');
+  if (ok) syncLoad();
+}
+
+// ── BULK ─────────────────────────────────────────────
+function addBulkRow() {
+  const id = ++bulkN;
+  const today = new Date().toISOString().split('T')[0];
+  const mOpts = WORLDS.map(w =>
+    `<optgroup label="${w.emoji} ${w.title}">${
+      w.missions.map(m => `<option value="${m.id}">${m.id} – ${m.title}</option>`).join('')
+    }</optgroup>`
+  ).join('');
+
+  const div = document.createElement('div');
+  div.className = 'bulk-row';
+  div.id = 'br-' + id;
+  div.innerHTML = `
+    <div class="bulk-row-num">EINTRAG #${id}</div>
+    <button class="bulk-remove" onclick="removeBulkRow(${id})">✕</button>
+    <div class="form-row" style="margin-bottom:0.5rem">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">DATUM</label>
+        <input type="date" id="brd-${id}" value="${today}" />
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">HELD</label>
+        <select id="brt-${id}">
+          <option value="write">🦍 DK — Schreiben (3★)</option>
+          <option value="revise">🐢 Koopa — Überarbeiten (2★)</option>
+          <option value="read">🦕 Yoshi — Lesen (1★)</option>
+          <option value="plan">🍄 Toad — Planung (1★)</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">MISSION</label>
+        <select id="brc-${id}">
+          <option value="">— Allgemein —</option>
+          ${mOpts}
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">NOTIZ</label>
+        <input type="text" id="brn-${id}" placeholder="Optional…" />
+      </div>
+    </div>`;
+  document.getElementById('bulkList').appendChild(div);
+}
+
+function removeBulkRow(id) {
+  document.getElementById('br-' + id)?.remove();
+}
+
+async function submitBulk() {
+  const rows = document.querySelectorAll('.bulk-row');
+  if (!rows.length) { showAlert('bulkAlert','error','Keine Einträge.'); return; }
+
+  const newE = [];
+  let valid = true;
+  rows.forEach(row => {
+    const n = row.id.replace('br-','');
+    const date    = document.getElementById(`brd-${n}`)?.value;
+    const type    = document.getElementById(`brt-${n}`)?.value || 'write';
+    const chapter = document.getElementById(`brc-${n}`)?.value || '';
+    const note    = document.getElementById(`brn-${n}`)?.value.trim() || '';
+    if (!date) { valid = false; return; }
+    newE.push({ id: uid(), date, type, chapter, note });
+  });
+
+  if (!valid) { showAlert('bulkAlert','error','Bitte überall ein Datum angeben.'); return; }
+
+  const btn = document.getElementById('bulkBtn');
+  btn.innerHTML = '<span class="spinner"></span> SPEICHERE…';
+  btn.disabled  = true;
+
+  entries.push(...newE);
+  recalcLives();
+  persist();
+  updateUI();
+
+  let ok = false;
+  try { const r = await apiPost({ action:'bulkAdd', entries:newE }); ok = r?.success; } catch(e){}
+
+  btn.innerHTML = '▶ ALLE SPEICHERN';
+  btn.disabled  = false;
+
+  const sum = newE.reduce((s,e) => s + (HEROES[e.type]?.pts||0), 0);
+  showAlert('bulkAlert','success', `✓ ${newE.length} Einträge · +${sum}★` + (ok?'':' (offline)'));
+
+  document.getElementById('bulkList').innerHTML = '';
+  bulkN = 0;
+  addBulkRow();
+  if (ok) syncLoad();
+}
+
+// ── HELPERS ──────────────────────────────────────────
+function persist() {
+  localStorage.setItem(LS_KEY, JSON.stringify({ entries, lives }));
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function fmtDate(ds) {
+  if (!ds) return '—';
+  return new Date(ds + 'T12:00:00').toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'2-digit' });
+}
+
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id)?.classList.add('active');
+  const idx = { world:0, checkin:1, bulk:2, log:3 }[id];
+  document.querySelectorAll('.tab-btn')[idx]?.classList.add('active');
+}
+
+function showAlert(id, type, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  setTimeout(() => { el.innerHTML = ''; }, 4500);
+}
+
+let toastT;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function spawnCoin(btn) {
+  const rect = btn.getBoundingClientRect();
+  const el   = document.createElement('div');
+  el.className = 'coin-pop';
+  el.textContent = '🪙';
+  el.style.left = rect.left + rect.width/2 + 'px';
+  el.style.top  = rect.top + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 700);
+}
+</script>
+</body>
+</html>
