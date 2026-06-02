@@ -384,7 +384,7 @@
         </div>
         <div class="log-wrap">
           <table class="log-table">
-            <thead><tr><th>Datum</th><th>Held</th><th>Mission</th><th>★</th><th>Notiz</th><th></th></tr></thead>
+            <thead><tr><th>Datum</th><th>Held</th><th>Mission</th><th>★</th><th></th><th>Notiz</th></tr></thead>
             <tbody id="logBody"><tr><td colspan="6" class="log-empty">Noch keine Einträge</td></tr></tbody>
           </table>
         </div>
@@ -637,7 +637,7 @@ function renderLog() {
   const tf = document.getElementById('fType')?.value    || '';
   const cf = document.getElementById('fChapter')?.value || '';
   let rows = entries.filter(e => (!tf || e.type === tf) && (!cf || e.chapter === cf));
-  rows = [...rows].sort((a,b) => b.date.localeCompare(a.date));
+  rows = [...rows].sort((a,b) => normalizeDate(b.date).localeCompare(normalizeDate(a.date)));
   const tbody = document.getElementById('logBody');
   if (!rows.length) {
     tbody.innerHTML = '<tr><td colspan="6" class="log-empty">Keine Einträge gefunden</td></tr>';
@@ -652,10 +652,10 @@ function renderLog() {
     return `<tr>
       <td style="white-space:nowrap">${fmtDate(e.date)}</td>
       <td><span class="badge ${badge}" style="gap:0.35rem">${sprite}${h.name}</span></td>
-      <td style="white-space:nowrap;font-size:0.72rem">${m ? m.id : (e.chapter || '—')}</td>
+      <td style="white-space:nowrap;font-size:0.72rem">${m ? m.id : (e.chapter && !e.chapter.includes(' ') ? e.chapter : '—')}</td>
       <td style="font-family:var(--pixel);font-size:0.45rem;color:var(--yellow)">${h.pts}★</td>
-      <td style="color:var(--muted);font-size:0.72rem">${e.note || ''}</td>
       <td><button class="btn-delete" onclick="deleteEntry('${e.id}')">✕</button></td>
+      <td style="color:var(--muted);font-size:0.72rem">${e.note || ''}</td>
     </tr>`;
   }).join('');
   const sumPts = rows.reduce((s,e) => s + (HEROES[e.type]?.pts || 0), 0);
