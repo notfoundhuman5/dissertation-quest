@@ -384,8 +384,8 @@
         </div>
         <div class="log-wrap">
           <table class="log-table">
-            <thead><tr><th>Datum</th><th>Held</th><th>Mission</th><th>★</th><th></th><th>Notiz</th></tr></thead>
-            <tbody id="logBody"><tr><td colspan="6" class="log-empty">Noch keine Einträge</td></tr></tbody>
+            <thead><tr><th>Datum</th><th>Held</th><th>Mission</th><th></th><th>Notiz</th></tr></thead>
+            <tbody id="logBody"><tr><td colspan="5" class="log-empty">Noch keine Einträge</td></tr></tbody>
           </table>
         </div>
         <div id="logSummary" style="font-size:0.68rem;color:var(--muted);margin-top:0.75rem;text-align:right;font-family:var(--pixel);"></div>
@@ -640,7 +640,7 @@ function renderLog() {
   rows = [...rows].sort((a,b) => normalizeDate(b.date).localeCompare(normalizeDate(a.date)));
   const tbody = document.getElementById('logBody');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="log-empty">Keine Einträge gefunden</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="log-empty">Keine Einträge gefunden</td></tr>';
     document.getElementById('logSummary').textContent = '';
     return;
   }
@@ -653,7 +653,6 @@ function renderLog() {
       <td style="white-space:nowrap">${fmtDate(e.date)}</td>
       <td><span class="badge ${badge}" style="gap:0.35rem">${sprite}${h.name}</span></td>
       <td style="white-space:nowrap;font-size:0.72rem">${m ? m.id : (e.chapter && String(e.chapter).trim() && !String(e.chapter).includes('GMT') ? String(e.chapter).trim() : '—')}</td>
-      <td style="font-family:var(--pixel);font-size:0.45rem;color:var(--white)">${h.pts}★</td>
       <td><button class="btn-delete" onclick="deleteEntry('${e.id}')">✕</button></td>
       <td style="color:var(--muted);font-size:0.72rem">${e.note || ''}</td>
     </tr>`;
@@ -798,7 +797,7 @@ async function deleteEntry(id) {
   recalcLives(); persist(); updateUI();
   showToast('✓ GELÖSCHT');
   try {
-    const r = await apiPost({ action: 'deleteEntry', id });
+    const r = await apiPost({ action: 'deleteEntry', id, date: removed.date, type: removed.type, chapter: removed.chapter, note: removed.note });
     if (!r?.success) {
       entries.splice(idx, 0, removed);
       recalcLives(); persist(); updateUI();
