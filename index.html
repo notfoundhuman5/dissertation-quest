@@ -646,14 +646,14 @@ function renderLog() {
   }
   tbody.innerHTML = rows.map(e => {
     const h     = HEROES[e.type] || { emoji:'?', name:e.type, pts:0 };
-    const m     = ALL_MISSIONS.find(m => m.id === e.chapter);
+    const m     = ALL_MISSIONS.find(m => m.id === String(e.chapter).trim());
     const badge = `badge-${e.type}`;
     const sprite = getSpriteSVG(e.type, 22);
     return `<tr>
       <td style="white-space:nowrap">${fmtDate(e.date)}</td>
       <td><span class="badge ${badge}" style="gap:0.35rem">${sprite}${h.name}</span></td>
-      <td style="white-space:nowrap;font-size:0.72rem">${m ? m.id : (e.chapter && !e.chapter.includes(' ') ? e.chapter : '—')}</td>
-      <td style="font-family:var(--pixel);font-size:0.45rem;color:var(--yellow)">${h.pts}★</td>
+      <td style="white-space:nowrap;font-size:0.72rem">${m ? m.id : (e.chapter && String(e.chapter).trim() && !String(e.chapter).includes('GMT') ? String(e.chapter).trim() : '—')}</td>
+      <td style="font-family:var(--pixel);font-size:0.45rem;color:var(--white)">${h.pts}★</td>
       <td><button class="btn-delete" onclick="deleteEntry('${e.id}')">✕</button></td>
       <td style="color:var(--muted);font-size:0.72rem">${e.note || ''}</td>
     </tr>`;
@@ -794,10 +794,19 @@ async function deleteEntry(id) {
   if (!confirm('Eintrag wirklich löschen?')) return;
   const idx = entries.findIndex(e => e.id === id);
   if (idx === -1) return;
-  entries.splice(idx, 1); recalcLives(); persist(); updateUI();
+  const removed = entries.splice(idx, 1)[0];
+  recalcLives(); persist(); updateUI();
   showToast('✓ GELÖSCHT');
-  try { await apiPost({ action: 'deleteEntry', id }); } catch(e) {}
-  syncLoad();
+  try {
+    const r = await apiPost({ action: 'deleteEntry', id });
+    if (!r?.success) {
+      entries.splice(idx, 0, removed);
+      recalcLives(); persist(); updateUI();
+      showToast('✗ NICHT GEFUNDEN — prüfe ID');
+    }
+  } catch(e) {
+    showToast('OFFLINE — lokal gelöscht');
+  }
 }
 
 function persist() { localStorage.setItem(LS_KEY, JSON.stringify({ entries, lives })); }
