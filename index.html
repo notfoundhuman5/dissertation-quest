@@ -652,7 +652,7 @@ function renderLog() {
     return `<tr>
       <td style="white-space:nowrap">${fmtDate(e.date)}</td>
       <td><span class="badge ${badge}" style="gap:0.35rem">${sprite}${h.name}</span></td>
-      <td style="white-space:nowrap;font-size:0.72rem">${m ? m.id : (e.chapter && String(e.chapter).trim() && !String(e.chapter).includes('GMT') ? String(e.chapter).trim() : '—')}</td>
+      <td style="font-size:0.72rem">${m ? `<span style="color:var(--muted)">${m.id}</span> ${m.title}` : (e.chapter && String(e.chapter).trim() && !String(e.chapter).includes('GMT') ? String(e.chapter).trim() : '—')}</td>
       <td><button class="btn-delete" onclick="deleteEntry('${e.id}')">✕</button></td>
       <td style="color:var(--muted);font-size:0.72rem">${e.note || ''}</td>
     </tr>`;
