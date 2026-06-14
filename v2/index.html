@@ -231,6 +231,14 @@ header { padding-top: calc(0.6rem + env(safe-area-inset-top)); }
 .hero-name { font-family:var(--display); font-weight:700; font-size:0.62rem; letter-spacing:0.06em; color:var(--marble); }
 .hero-role { font-size:0.78rem; font-style:italic; color:var(--muted); line-height:1.15; }
 .hero-pts  { font-family:var(--display); font-size:0.52rem; color:var(--gold2); margin-top:0.15rem; }
+.ci-mode-toggle { display:flex; gap:0.4rem; margin-bottom:0.85rem; }
+.ci-mode-btn {
+  flex:1; font-family:var(--display); font-weight:700; font-size:0.6rem; letter-spacing:0.14em;
+  padding:0.6rem 0.3rem; border-radius:6px; cursor:pointer;
+  color:var(--muted); background:var(--bg2); border:1px solid var(--line);
+}
+.ci-mode-btn.active { color:var(--gold2); border-color:var(--gold); background:linear-gradient(180deg,#221b12,var(--bg2)); box-shadow:0 0 12px rgba(212,175,55,0.15); }
+.ci-pause-hint { font-size:0.95rem; font-style:italic; color:var(--muted); margin-bottom:0.85rem; line-height:1.35; }
 .form-row { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
 .form-group { margin-bottom:0.7rem; }
 .form-label {
@@ -292,6 +300,7 @@ select { -webkit-appearance:none; appearance:none;
 .badge-read    { border-color:#274b63; background:rgba(79,143,184,0.1); }
 .badge-plan    { border-color:#33502b; background:rgba(93,138,74,0.12); }
 .badge-triumph { border-color:var(--gold); background:rgba(212,175,55,0.16); color:var(--gold2); }
+.badge-pause   { border-color:#3a5a6e; background:rgba(79,143,184,0.12); color:#9fcae0; }
 .btn-delete { border:none; background:none; color:var(--blood2); cursor:pointer; font-size:0.95rem; padding:0.2rem; }
 #logSummary { font-family:var(--display); font-size:0.55rem; letter-spacing:0.12em; color:var(--muted); margin-top:0.75rem; text-align:right; }
 
@@ -443,15 +452,32 @@ select { -webkit-appearance:none; appearance:none;
   <div class="tab-content" id="tab-checkin">
     <div class="panel">
       <div class="panel-title">IN DIE SCHLACHT <small>CHECK-IN</small></div>
-      <div id="ciAlert"></div>
-      <label class="form-label">W&Auml;HLE DEINEN BEISTAND</label>
-      <div class="hero-options" id="heroOptions"></div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">TAG DER SCHLACHT</label><input type="date" id="ciDate" /></div>
-        <div class="form-group"><label class="form-label">PR&Uuml;FUNG</label><select id="ciChapter"><option value="">&#8212; Freier Kampf &#8212;</option></select></div>
+      <div class="ci-mode-toggle">
+        <button class="ci-mode-btn active" id="ciModeBattle" onclick="setCiMode('battle')">&#9876; SCHLACHT</button>
+        <button class="ci-mode-btn" id="ciModePause" onclick="setCiMode('pause')">&#128330; WAFFENRUHE</button>
       </div>
-      <div class="form-group"><label class="form-label">CHRONIK-NOTIZ (OPTIONAL)</label><textarea id="ciNote" placeholder="Was hast du heute errungen?"></textarea></div>
-      <button class="px-btn" onclick="submitCheckin()" id="ciBtn">&#9876; SCHLAG AUSF&Uuml;HREN</button>
+      <div id="ciAlert"></div>
+
+      <div id="ciBattle">
+        <label class="form-label">W&Auml;HLE DEINEN BEISTAND</label>
+        <div class="hero-options" id="heroOptions"></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">TAG DER SCHLACHT</label><input type="date" id="ciDate" /></div>
+          <div class="form-group"><label class="form-label">PR&Uuml;FUNG</label><select id="ciChapter"><option value="">&#8212; Freier Kampf &#8212;</option></select></div>
+        </div>
+        <div class="form-group"><label class="form-label">CHRONIK-NOTIZ (OPTIONAL)</label><textarea id="ciNote" placeholder="Was hast du heute errungen?"></textarea></div>
+        <button class="px-btn" onclick="submitCheckin()" id="ciBtn">&#9876; SCHLAG AUSF&Uuml;HREN</button>
+      </div>
+
+      <div id="ciPause" style="display:none">
+        <p class="ci-pause-hint">Eine Waffenruhe &#8212; Urlaub, Dienstreise, Krankheit &#8212; ruht deinen Zorn: Diese Tage z&auml;hlen nicht gegen deinen Streak.</p>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">VON</label><input type="date" id="cpFrom" /></div>
+          <div class="form-group"><label class="form-label">BIS</label><input type="date" id="cpTo" /></div>
+        </div>
+        <div class="form-group"><label class="form-label">GRUND</label><input type="text" id="cpReason" placeholder="z.B. Urlaub auf Kreta, Dienstreise&#8230;" /></div>
+        <button class="px-btn" onclick="submitPause()" id="cpBtn">&#128330; WAFFENRUHE EINTRAGEN</button>
+      </div>
     </div>
   </div>
 
@@ -478,6 +504,7 @@ select { -webkit-appearance:none; appearance:none;
           <option value="read">Hermes &#8212; Lesen</option>
           <option value="plan">Gaia &#8212; Planen</option>
           <option value="triumph">&#127942; Triumphe</option>
+          <option value="pause">&#128330; Waffenruhen</option>
         </select>
         <select id="fChapter" onchange="renderLog()"><option value="">Alle Pr&uuml;fungen</option></select>
       </div>
@@ -842,31 +869,54 @@ function ptsOf(e)    { return HEROES[e.type]?.pts || 0; }
 function totalPts()  { return entries.reduce((s,e) => s + ptsOf(e), 0); }
 function getLvl(pts) { return LEVELS.find(l => pts >= l.min && pts <= l.max) || LEVELS[LEVELS.length-1]; }
 
+/* Waffenruhen (Pausen): type:'pause', date=Beginn, note beginnt mit dem End-Datum.
+   Diese Tage sind neutral — sie brechen den Streak nicht und zählen auch nicht dazu. */
+function pauseRanges() {
+  return entries.filter(e => e.type === 'pause').map(e => {
+    const s = normalizeDate(e.date);
+    const m = String(e.note || '').match(/^(\d{4}-\d{2}-\d{2})/);
+    const en = m ? m[1] : s;
+    return s <= en ? [s, en] : [en, s];
+  });
+}
+function isPausedDay(ds, ranges) {
+  return ranges.some(([s, e]) => ds >= s && ds <= e);
+}
+
 function calcStreak() {
-  if (!entries.length) return { streak:0, buffer:0 };
+  const work = new Set(entries.filter(e => e.type !== 'pause').map(e => normalizeDate(e.date)));
+  if (!work.size) return { streak:0, buffer:0 };
+  const ranges = pauseRanges();
   const today = new Date(); today.setHours(0,0,0,0);
-  const active = new Set(entries.map(e => normalizeDate(e.date)));
   let streak = 0, misses = 0, d = new Date(today);
-  for (let i = 0; i < 400; i++) {
+  for (let i = 0; i < 800; i++) {
     const ds = d.toISOString().split('T')[0];
-    if (active.has(ds)) { streak++; misses = 0; }
+    if (work.has(ds)) { streak++; misses = 0; }
+    else if (isPausedDay(ds, ranges)) { /* neutral: überspringen */ }
     else { misses++; if (misses > 2) break; }
     d.setDate(d.getDate() - 1);
   }
   let buffer = 0;
   const h = new Date(today);
-  for (let i = 0; i < 3; i++) {
-    if (!active.has(h.toISOString().split('T')[0])) { buffer++; h.setDate(h.getDate()-1); }
-    else break;
+  for (let i = 0; i < 90; i++) {
+    const ds = h.toISOString().split('T')[0];
+    if (work.has(ds)) break;
+    if (isPausedDay(ds, ranges)) { h.setDate(h.getDate()-1); continue; }
+    buffer++; h.setDate(h.getDate()-1);
+    if (buffer >= 2) break;
   }
   return { streak, buffer };
 }
 
 function recalcLives() {
-  const active = new Set(entries.map(e => normalizeDate(e.date)));
-  if (!active.size) { lives = 5; return; }
+  const work = entries.filter(e => e.type !== 'pause');
+  if (!work.length) { lives = 5; return; }
   const { streak } = calcStreak();
   lives = Math.min(99, 5 + Math.floor(streak / 7));
+}
+
+function daysBetween(s, e) {
+  return Math.round((new Date(e + 'T12:00:00') - new Date(s + 'T12:00:00')) / 86400000) + 1;
 }
 
 function mPts(id) { return entries.filter(e => e.chapter === id).reduce((s,e) => s + ptsOf(e), 0); }
@@ -1133,6 +1183,21 @@ function renderLog() {
     return;
   }
   tbody.innerHTML = rows.map(e => {
+    if (e.type === 'pause') {
+      const s = normalizeDate(e.date);
+      const mm = String(e.note || '').match(/^(\d{4}-\d{2}-\d{2})\s*(.*)$/);
+      const en = mm ? mm[1] : s;
+      const label = mm ? mm[2] : (e.note || '');
+      const days = daysBetween(s, en);
+      const range = en !== s ? `${fmtDate(s)} – ${fmtDate(en)}` : fmtDate(s);
+      return `<tr>
+        <td style="white-space:nowrap;font-size:0.85rem">${range}</td>
+        <td><span class="badge badge-pause">🕊 RUHE</span></td>
+        <td style="font-size:0.88rem">${days} Tag${days>1?'e':''}${label ? ' · ' + label : ''}</td>
+        <td><button class="btn-delete" onclick="deleteEntry('${e.id}')">✕</button></td>
+        <td></td>
+      </tr>`;
+    }
     const ch = String(e.chapter || '').trim();
     const m  = ALL_MISSIONS.find(m => m.id === ch);
     const w  = WORLDS.find(w => w.id === ch);
@@ -1174,9 +1239,9 @@ function renderOracle() {
   const weekPts = {};
   dated.forEach(x => { const wk = mondayOf(x.ds); weekPts[wk] = (weekPts[wk] || 0) + ptsOf(x.e); });
 
-  const activeDays = Object.keys(dayPts).filter(d => dayPts[d] > 0 || dated.some(x => x.ds === d)).length;
+  const activeDays = new Set(dated.filter(x => x.e.type !== 'pause').map(x => x.ds)).size;
   const bestWeek = Object.values(weekPts).reduce((m,v) => Math.max(m,v), 0);
-  const deeds = entries.filter(e => e.type !== 'triumph').length;
+  const deeds = entries.filter(e => e.type !== 'triumph' && e.type !== 'pause').length;
   const triumphs = entries.filter(e => e.type === 'triumph').length;
 
   document.getElementById('oracleCards').innerHTML = `
@@ -1308,6 +1373,38 @@ async function submitCheckin() {
   showAlert('ciAlert','success', `+${h.pts} ORB${h.pts>1?'S':''} — ${h.name} kämpfte an deiner Seite!` + (ok ? '' : ' (wird nachgereicht)'));
   document.getElementById('ciNote').value = '';
   setToday('ciDate');
+}
+
+function setCiMode(mode) {
+  const battle = mode === 'battle';
+  document.getElementById('ciBattle').style.display = battle ? '' : 'none';
+  document.getElementById('ciPause').style.display  = battle ? 'none' : '';
+  document.getElementById('ciModeBattle').classList.toggle('active', battle);
+  document.getElementById('ciModePause').classList.toggle('active', !battle);
+  document.getElementById('ciAlert').innerHTML = '';
+  if (!battle) {
+    if (!document.getElementById('cpFrom').value) setToday('cpFrom');
+    if (!document.getElementById('cpTo').value)   setToday('cpTo');
+  }
+}
+
+async function submitPause() {
+  let s = document.getElementById('cpFrom').value;
+  let e = document.getElementById('cpTo').value || s;
+  const reason = document.getElementById('cpReason').value.trim();
+  if (!s) { showAlert('ciAlert','error','Wähle den Beginn der Waffenruhe.'); return; }
+  if (s > e) { const t = s; s = e; e = t; }
+  const note  = e + (reason ? ' ' + reason : '');
+  const entry = { id: uid(), date: s, type:'pause', chapter:'', note };
+  const btn   = document.getElementById('cpBtn');
+  btn.innerHTML = '<span class="spinner"></span> WIRD EINGETRAGEN…';
+  btn.disabled  = true;
+  entries.push(entry); recalcLives(); persist(); updateUI();
+  const ok = await trySend({ action:'addEntry', entry });
+  btn.innerHTML = '🕊 WAFFENRUHE EINTRAGEN'; btn.disabled = false;
+  const days = daysBetween(s, e);
+  showAlert('ciAlert','success', `🕊 Waffenruhe über ${days} Tag${days>1?'e':''} eingetragen — dein Zorn ruht.` + (ok ? '' : ' (wird nachgereicht)'));
+  document.getElementById('cpReason').value = '';
 }
 
 function addBulkRow() {
