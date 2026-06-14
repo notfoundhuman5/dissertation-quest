@@ -210,6 +210,17 @@
     .badge-revise { background: #FFE8D0; color: #7A3A00; border-color: #E09050; }
     .badge-read   { background: #D8EEFF; color: #0A3A7A; border-color: #60A0E0; }
     .badge-plan   { background: #F0E8FF; color: #5A1A8A; border-color: #B080E0; }
+    .badge-pause  { background: #E0F2EC; color: #0A5A4A; border-color: #5AB89A; }
+    .ci-mode-toggle { display: flex; gap: 0.5rem; margin-bottom: 0.85rem; }
+    .ci-mode-btn {
+      flex: 1; padding: 0.6rem 0.3rem; font-family: var(--pixel); font-size: 0.46rem;
+      letter-spacing: 0.05em; border: 2px solid var(--brown); border-radius: 6px;
+      cursor: pointer; background: var(--white); color: var(--brown2); box-shadow: 0 3px 0 var(--island2);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ci-mode-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--island2); }
+    .ci-mode-btn.active { background: #E8F8D8; border-color: var(--grass); box-shadow: 0 3px 0 var(--grass2); }
+    .ci-pause-hint { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.85rem; line-height: 1.4; }
     .log-wrap { overflow-x: auto; }
     .log-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 420px; }
     .log-table th {
@@ -317,38 +328,53 @@
     <div class="px-card">
       <div class="px-card-header"><span>✏️</span><span class="px-card-title">NEUER EINTRAG</span></div>
       <div class="px-card-body">
+        <div class="ci-mode-toggle">
+          <button class="ci-mode-btn active" id="ciModeBattle" onclick="setCiMode('battle')">✏️ EINTRAG</button>
+          <button class="ci-mode-btn" id="ciModePause" onclick="setCiMode('pause')">🌴 PAUSE</button>
+        </div>
         <div id="ciAlert"></div>
-        <div class="form-group">
-          <div class="form-label">HELD & AKTIVITÄT WÄHLEN</div>
-          <div class="hero-options" id="heroOptions">
-            <div class="hero-opt selected" data-type="write" onclick="selectHero(this)">
-              <div class="hero-emoji">🦍</div>
-              <div class="hero-info"><div class="hero-name">DONKEY KONG</div><div class="hero-action">Schreiben</div></div>
-              <div class="hero-pts">3★</div>
-            </div>
-            <div class="hero-opt" data-type="revise" onclick="selectHero(this)">
-              <div class="hero-emoji">👑</div>
-              <div class="hero-info"><div class="hero-name">BOWSER</div><div class="hero-action">Überarbeiten</div></div>
-              <div class="hero-pts">2★</div>
-            </div>
-            <div class="hero-opt" data-type="read" onclick="selectHero(this)">
-              <div class="hero-emoji">🦕</div>
-              <div class="hero-info"><div class="hero-name">YOSHI</div><div class="hero-action">Lesen & Recherche</div></div>
-              <div class="hero-pts">1★</div>
-            </div>
-            <div class="hero-opt" data-type="plan" onclick="selectHero(this)">
-              <div class="hero-emoji">🍄</div>
-              <div class="hero-info"><div class="hero-name">TOAD</div><div class="hero-action">Planung & Gespräch</div></div>
-              <div class="hero-pts">1★</div>
+        <div id="ciBattle">
+          <div class="form-group">
+            <div class="form-label">HELD & AKTIVITÄT WÄHLEN</div>
+            <div class="hero-options" id="heroOptions">
+              <div class="hero-opt selected" data-type="write" onclick="selectHero(this)">
+                <div class="hero-emoji">🦍</div>
+                <div class="hero-info"><div class="hero-name">DONKEY KONG</div><div class="hero-action">Schreiben</div></div>
+                <div class="hero-pts">3★</div>
+              </div>
+              <div class="hero-opt" data-type="revise" onclick="selectHero(this)">
+                <div class="hero-emoji">👑</div>
+                <div class="hero-info"><div class="hero-name">BOWSER</div><div class="hero-action">Überarbeiten</div></div>
+                <div class="hero-pts">2★</div>
+              </div>
+              <div class="hero-opt" data-type="read" onclick="selectHero(this)">
+                <div class="hero-emoji">🦕</div>
+                <div class="hero-info"><div class="hero-name">YOSHI</div><div class="hero-action">Lesen & Recherche</div></div>
+                <div class="hero-pts">1★</div>
+              </div>
+              <div class="hero-opt" data-type="plan" onclick="selectHero(this)">
+                <div class="hero-emoji">🍄</div>
+                <div class="hero-info"><div class="hero-name">TOAD</div><div class="hero-action">Planung & Gespräch</div></div>
+                <div class="hero-pts">1★</div>
+              </div>
             </div>
           </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">DATUM</label><input type="date" id="ciDate" /></div>
+            <div class="form-group"><label class="form-label">MISSION</label><select id="ciChapter"><option value="">— Allgemein —</option></select></div>
+          </div>
+          <div class="form-group"><label class="form-label">NOTIZ (OPTIONAL)</label><textarea id="ciNote" placeholder="Was hast du heute geschafft?"></textarea></div>
+          <button class="px-btn px-btn-primary" onclick="submitCheckin()" id="ciBtn">▶ SPEICHERN</button>
         </div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">DATUM</label><input type="date" id="ciDate" /></div>
-          <div class="form-group"><label class="form-label">MISSION</label><select id="ciChapter"><option value="">— Allgemein —</option></select></div>
+        <div id="ciPause" style="display:none">
+          <p class="ci-pause-hint">Pausentage — Urlaub, Dienstreise, Krankheit — zählen nicht gegen deinen Streak. 🔥 bleibt erhalten!</p>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">VON</label><input type="date" id="cpFrom" /></div>
+            <div class="form-group"><label class="form-label">BIS</label><input type="date" id="cpTo" /></div>
+          </div>
+          <div class="form-group"><label class="form-label">GRUND</label><input type="text" id="cpReason" placeholder="z.B. Urlaub, Dienstreise…" /></div>
+          <button class="px-btn px-btn-primary" onclick="submitPause()" id="cpBtn">🌴 PAUSE SPEICHERN</button>
         </div>
-        <div class="form-group"><label class="form-label">NOTIZ (OPTIONAL)</label><textarea id="ciNote" placeholder="Was hast du heute geschafft?"></textarea></div>
-        <button class="px-btn px-btn-primary" onclick="submitCheckin()" id="ciBtn">▶ SPEICHERN</button>
       </div>
     </div>
   </div>
@@ -379,6 +405,7 @@
             <option value="revise">👑 Überarbeiten</option>
             <option value="read">🦕 Lesen</option>
             <option value="plan">🍄 Planung</option>
+            <option value="pause">🌴 Pausen</option>
           </select>
           <select id="fChapter" onchange="renderLog()"><option value="">Alle Missionen</option></select>
         </div>
@@ -528,29 +555,51 @@ async function syncLoad() {
 function totalPts() { return entries.reduce((s,e) => s + (HEROES[e.type]?.pts || 0), 0); }
 function getLvl(pts) { return LEVELS.find(l => pts >= l.min && pts <= l.max) || LEVELS[LEVELS.length-1]; }
 
+/* Pausen (Urlaub, Dienstreise): type:'pause', date=Beginn, note beginnt mit dem End-Datum.
+   Diese Tage sind neutral — sie brechen den Streak nicht und zählen auch nicht dazu. */
+function pauseRanges() {
+  return entries.filter(e => e.type === 'pause').map(e => {
+    const s = normalizeDate(e.date);
+    const m = String(e.note || '').match(/^(\d{4}-\d{2}-\d{2})/);
+    const en = m ? m[1] : s;
+    return s <= en ? [s, en] : [en, s];
+  });
+}
+function isPausedDay(ds, ranges) {
+  return ranges.some(([s, e]) => ds >= s && ds <= e);
+}
+function daysBetween(s, e) {
+  return Math.round((new Date(e + 'T12:00:00') - new Date(s + 'T12:00:00')) / 86400000) + 1;
+}
+
 function calcStreak() {
-  if (!entries.length) return { streak:0, buffer:0 };
+  const work = new Set(entries.filter(e => e.type !== 'pause').map(e => normalizeDate(e.date)));
+  if (!work.size) return { streak:0, buffer:0 };
+  const ranges = pauseRanges();
   const today = new Date(); today.setHours(0,0,0,0);
-  const active = new Set(entries.map(e => normalizeDate(e.date)));
   let streak = 0, misses = 0, d = new Date(today);
-  for (let i = 0; i < 400; i++) {
+  for (let i = 0; i < 800; i++) {
     const ds = d.toISOString().split('T')[0];
-    if (active.has(ds)) { streak++; misses = 0; }
+    if (work.has(ds)) { streak++; misses = 0; }
+    else if (isPausedDay(ds, ranges)) { /* neutral: überspringen */ }
     else { misses++; if (misses > 2) break; }
     d.setDate(d.getDate() - 1);
   }
   let buffer = 0;
   const h = new Date(today);
-  for (let i = 0; i < 3; i++) {
-    if (!active.has(h.toISOString().split('T')[0])) { buffer++; h.setDate(h.getDate()-1); }
-    else break;
+  for (let i = 0; i < 90; i++) {
+    const ds = h.toISOString().split('T')[0];
+    if (work.has(ds)) break;
+    if (isPausedDay(ds, ranges)) { h.setDate(h.getDate()-1); continue; }
+    buffer++; h.setDate(h.getDate()-1);
+    if (buffer >= 2) break;
   }
   return { streak, buffer };
 }
 
 function recalcLives() {
-  const active = new Set(entries.map(e => normalizeDate(e.date)));
-  if (!active.size) { lives = 5; return; }
+  const work = entries.filter(e => e.type !== 'pause');
+  if (!work.length) { lives = 5; return; }
   const { streak } = calcStreak();
   lives = Math.min(99, 5 + Math.floor(streak / 7));
 }
@@ -645,6 +694,21 @@ function renderLog() {
     return;
   }
   tbody.innerHTML = rows.map(e => {
+    if (e.type === 'pause') {
+      const s = normalizeDate(e.date);
+      const mm = String(e.note || '').match(/^(\d{4}-\d{2}-\d{2})\s*(.*)$/);
+      const en = mm ? mm[1] : s;
+      const label = mm ? mm[2] : (e.note || '');
+      const days = daysBetween(s, en);
+      const range = en !== s ? `${fmtDate(s)} – ${fmtDate(en)}` : fmtDate(s);
+      return `<tr>
+        <td style="white-space:nowrap">${range}</td>
+        <td><span class="badge badge-pause">🌴 PAUSE</span></td>
+        <td style="font-size:0.72rem">${days} Tag${days>1?'e':''}${label ? ' · ' + label : ''}</td>
+        <td><button class="btn-delete" onclick="deleteEntry('${e.id}')">✕</button></td>
+        <td></td>
+      </tr>`;
+    }
     const h     = HEROES[e.type] || { emoji:'?', name:e.type, pts:0 };
     const m     = ALL_MISSIONS.find(m => m.id === String(e.chapter).trim());
     const badge = `badge-${e.type}`;
@@ -716,6 +780,40 @@ async function submitCheckin() {
   showAlert('ciAlert','success', `+${pts}★ ${HEROES[type]?.emoji} ${HEROES[type]?.name}!` + (ok ? '' : ' (offline)'));
   document.getElementById('ciNote').value = '';
   setToday('ciDate');
+  if (ok) syncLoad();
+}
+
+function setCiMode(mode) {
+  const battle = mode === 'battle';
+  document.getElementById('ciBattle').style.display = battle ? '' : 'none';
+  document.getElementById('ciPause').style.display  = battle ? 'none' : '';
+  document.getElementById('ciModeBattle').classList.toggle('active', battle);
+  document.getElementById('ciModePause').classList.toggle('active', !battle);
+  document.getElementById('ciAlert').innerHTML = '';
+  if (!battle) {
+    if (!document.getElementById('cpFrom').value) setToday('cpFrom');
+    if (!document.getElementById('cpTo').value)   setToday('cpTo');
+  }
+}
+
+async function submitPause() {
+  let s = document.getElementById('cpFrom').value;
+  let e = document.getElementById('cpTo').value || s;
+  const reason = document.getElementById('cpReason').value.trim();
+  if (!s) { showAlert('ciAlert','error','Bitte ein Startdatum wählen.'); return; }
+  if (s > e) { const t = s; s = e; e = t; }
+  const note  = e + (reason ? ' ' + reason : '');
+  const entry = { id: uid(), date: s, type:'pause', chapter:'', note };
+  const btn   = document.getElementById('cpBtn');
+  btn.innerHTML = '<span class="spinner"></span> SPEICHERE…';
+  btn.disabled  = true;
+  entries.push(entry); recalcLives(); persist(); updateUI();
+  let ok = false;
+  try { const r = await apiPost({ action:'addEntry', entry }); ok = r?.success; } catch(e2){}
+  btn.innerHTML = '🌴 PAUSE SPEICHERN'; btn.disabled = false;
+  const days = daysBetween(s, e);
+  showAlert('ciAlert','success', `🌴 Pause über ${days} Tag${days>1?'e':''} eingetragen — dein Streak ruht!` + (ok ? '' : ' (offline)'));
+  document.getElementById('cpReason').value = '';
   if (ok) syncLoad();
 }
 
